@@ -24,7 +24,7 @@ const LoadingScreen = () => (
 );
 
 const EncouragementGenerator = () => {
-  const [verse, setVerse] = useState('');
+  const [verse, setVerse] = useState<{ text: string; reference: string } | null>(null);
   const [joke, setJoke] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
