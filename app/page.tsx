@@ -1,15 +1,34 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Smile, Book } from 'lucide-react';
+import { Smile, Book, Heart } from 'lucide-react';
+
+const LoadingScreen = () => (
+  <div className="fixed inset-0 bg-gradient-to-b from-blue-500 to-purple-600 flex items-center justify-center">
+    <div className="text-center text-white space-y-6 p-8">
+      <div className="animate-bounce mb-4">
+        <Heart className="w-16 h-16 mx-auto text-white" />
+      </div>
+      <h1 className="text-4xl font-bold mb-4">Hope</h1>
+      <p className="text-xl italic">
+        "In moments of darkness, may these words be your guiding light."
+      </p>
+      <div className="mt-8 flex justify-center space-x-2">
+        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+      </div>
+    </div>
+  </div>
+);
 
 const EncouragementGenerator = () => {
   const [verse, setVerse] = useState('');
   const [joke, setJoke] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
-  // Array of encouraging Bible verse references
   const verseReferences = [
     'john+3:16',
     'philippians+4:13',
@@ -27,6 +46,12 @@ const EncouragementGenerator = () => {
     '2+corinthians+12:9',
     'proverbs+3:5-6'
   ];
+
+  useEffect(() => {
+    setTimeout(() => {
+      setInitialLoading(false);
+    }, 3000);
+  }, []);
 
   const getRandomVerse = () => {
     const randomIndex = Math.floor(Math.random() * verseReferences.length);
@@ -68,11 +93,15 @@ const EncouragementGenerator = () => {
     setLoading(false);
   };
 
+  if (initialLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="max-w-lg mx-auto space-y-4 p-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-center text-2xl">Daily Encouragement</CardTitle>
+          <CardTitle className="text-center text-2xl">Daily Light</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
