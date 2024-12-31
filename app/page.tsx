@@ -12,7 +12,7 @@ const LoadingScreen = () => (
       </div>
       <h1 className="text-4xl font-bold mb-4">Hope</h1>
       <p className="text-xl italic">
-        "In moments of darkness, may these words be your guiding light."
+        In moments of darkness, may these words be your guiding light.
       </p>
       <div className="mt-8 flex justify-center space-x-2">
         <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
