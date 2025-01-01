@@ -2,90 +2,32 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Smile, Book, Heart, Calendar, Star, BookMarked } from 'lucide-react';
-
-type Verse = { reference: string; label: string ,category?: string;};
-type VersesByCategory = { [key: string]: Verse[] };
-
-
-const versesByCategory: VersesByCategory = {
-  anxiety: [
-    { reference: 'philippians+4:6-7', label: 'Philippians 4:6-7' },
-    { reference: 'matthew+6:34', label: 'Matthew 6:34' },
-    { reference: '1+peter+5:7', label: '1 Peter 5:7' },
-    { reference: 'psalm+56:3', label: 'Psalm 56:3' }
-  ],
-  grief: [
-    { reference: 'psalm+34:18', label: 'Psalm 34:18' },
-    { reference: 'matthew+5:4', label: 'Matthew 5:4' },
-    { reference: 'psalm+147:3', label: 'Psalm 147:3' },
-    { reference: 'revelation+21:4', label: 'Revelation 21:4' }
-  ],
-  loneliness: [
-    { reference: 'deuteronomy+31:6', label: 'Deuteronomy 31:6' },
-    { reference: 'isaiah+41:10', label: 'Isaiah 41:10' },
-    { reference: 'matthew+28:20', label: 'Matthew 28:20' },
-    { reference: 'psalm+23:4', label: 'Psalm 23:4' }
-  ],
-  strength: [
-    { reference: 'philippians+4:13', label: 'Philippians 4:13' },
-    { reference: 'isaiah+40:31', label: 'Isaiah 40:31' },
-    { reference: '2+corinthians+12:9', label: '2 Corinthians 12:9' },
-    { reference: 'psalm+46:1', label: 'Psalm 46:1' }
-  ],
-  hope: [
-    { reference: 'jeremiah+29:11', label: 'Jeremiah 29:11' },
-    { reference: 'romans+15:13', label: 'Romans 15:13' },
-    { reference: 'romans+8:28', label: 'Romans 8:28' },
-    { reference: 'hebrews+11:1', label: 'Hebrews 11:1' }
-  ],
-  peace: [
-    { reference: 'john+14:27', label: 'John 14:27' },
-    { reference: 'philippians+4:7', label: 'Philippians 4:7' },
-    { reference: 'psalm+29:11', label: 'Psalm 29:11' },
-    { reference: 'isaiah+26:3', label: 'Isaiah 26:3' }
-  ]
-};
-
-interface CategorySelectorProps {
-  onSelect: (category: string) => void; // Adjust based on your function signature
-  selectedCategory: string; // Adjust based on the type of `selectedCategory`
-}
-
-
-const CategorySelector : React.FC<CategorySelectorProps>= ({ onSelect, selectedCategory }) => (
-  <div className="grid grid-cols-2 gap-2 mb-4">
-    {Object.keys(versesByCategory).map((category) => (
-      <Button
-        key={category}
-        onClick={() => onSelect(category)}
-        variant={selectedCategory === category ? "default" : "outline"}
-        className="capitalize"
-      >
-        {category}
-      </Button>
-    ))}
-  </div>
-);
-
-const LoadingScreen = () => (
-  <div className="fixed inset-0 bg-gradient-to-b from-blue-500 to-purple-600 flex items-center justify-center">
-    <div className="text-center text-white space-y-6 p-8">
-      <div className="animate-bounce mb-4">
-        <Heart className="w-16 h-16 mx-auto text-white" />
-      </div>
-      <h1 className="text-4xl font-bold mb-4">Daily Light</h1>
-      <p className="text-xl italic">
-        In moments of darkness, may these words be your guiding light.
-      </p>
-      <div className="mt-8 flex justify-center space-x-2">
-        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-        <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-      </div>
-    </div>
-  </div>
-);
+// import { Smile, Book, Calendar, Star , BookMarked, PenLine, X ,HandHeart,Users} from 'lucide-react';
+import { Verse } from '@/types/Verse';
+import { Smile, Book, Calendar, Star, BookMarked, PenLine, HandHeart, Users, Menu, X, ChevronDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LaodingScreen from '@/components/LaodingScreen';
+import { versesByCategory } from '@/constants/versesByCategory';
+import { useToast } from "@/hooks/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Note } from '@/interfaces/Note';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import NearbyUsers from '@/components/NearbyUsers';
+import PrayerJournal from '@/components/PrayerJournal';
+import NoteEditor from '@/components/NoteEditor';
+import CategorySelector from '@/components/CategorySelector';
+import ShareButton from '@/components/ShareButton';
 
 const EncouragementGenerator = () => {
   const [verse, setVerse] = useState<Verse | null>(null);
@@ -93,6 +35,8 @@ const EncouragementGenerator = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showPrayerJournal, setShowPrayerJournal] = useState(false);
+  const [showNearbyUsers, setShowNearbyUsers] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     if (typeof window !== 'undefined') {
       return JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -113,6 +57,7 @@ const EncouragementGenerator = () => {
   });
   const [dailyVerse, setDailyVerse] = useState(null);
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
+  const { toast } = useToast()
 
   const verseReferences = [
     'john+3:16',
@@ -216,25 +161,6 @@ const EncouragementGenerator = () => {
     return verseReferences[randomIndex];
   };
 
-  // const fetchVerse = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const randomVerseRef = getRandomVerse();
-  //     const response = await fetch(`https://bible-api.com/${randomVerseRef}`);
-  //     const data = await response.json();
-  //     setVerse({
-  //       text: data.text.trim(),
-  //       reference: data.reference
-  //     });
-  //   } catch (error) {
-  //     console.error('Error fetching verse:', error);
-  //     setVerse({
-  //       text: 'For God so loved the world that he gave his one and only Son.',
-  //       reference: 'John 3:16'
-  //     });
-  //   }
-  //   setLoading(false);
-  // };
 
   const fetchJoke = async () => {
     setLoading(true);
@@ -266,54 +192,147 @@ const EncouragementGenerator = () => {
     return dailyChallenges[randomIndex];
   };
 
+
+  const [notes, setNotes] = useState<Note[]>(() => {
+    if (typeof window !== 'undefined') {
+      return JSON.parse(localStorage.getItem('reflectionNotes') || '[]');
+    }
+    return [];
+  });
+  const [showNotes, setShowNotes] = useState(false);
+
+  // Save notes to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('reflectionNotes', JSON.stringify(notes));
+    }
+  }, [notes]);
+
+  const addNote = (newNote: Note) => {
+    setNotes(prev => [newNote, ...prev]);
+    toast({
+      description: "Your reflection has been saved!",
+    });
+  };
+
+  const deleteNote = (noteId: string) => {
+    setNotes(prev => prev.filter(note => note.id !== noteId));
+    toast({
+      description: "Reflection deleted.",
+    });
+  };
   if (initialLoading) {
-    return <LoadingScreen />;
+    return <LaodingScreen />;
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-4 p-4">
-      <Card>
-        <CardHeader>
+    <div className="max-w-4xl mx-auto p-4">
+      <Card className="mb-6">
+        <CardHeader className="space-y-4">
           <CardTitle className="text-center text-2xl">Daily Light</CardTitle>
-          <div className="flex justify-center items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            <span className="text-sm">Daily Streak: {streak} days</span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {dailyVerse && (
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h3 className="font-bold mb-2">Today&apos;s Verse:</h3>
-              <p className="text-lg mb-2">{dailyVerse.text}</p>
-              <p className="text-sm text-gray-600">- {dailyVerse.reference}</p>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              <span className="text-sm">Daily Streak: {streak} days</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto">
               <Button
-                onClick={() => toggleFavorite(dailyVerse)}
-                variant="ghost"
-                className="mt-2"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNotes(!showNotes)}
+                className="flex items-center justify-center"
               >
-                <Star className={`w-5 h-5 ${favorites.some(v => v.reference === dailyVerse.reference) ? 'text-yellow-500 fill-yellow-500' : ''}`} />
+                <PenLine className="w-4 h-4 mr-2" />
+                Reflections
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPrayerJournal(!showPrayerJournal)}
+                className="flex items-center justify-center"
+              >
+                <HandHeart className="w-4 h-4 mr-2" />
+                Prayers
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNearbyUsers(!showNearbyUsers)}
+                className="flex items-center justify-center"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Community
               </Button>
             </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Daily Verse Section */}
+          {dailyVerse && (
+            <Collapsible>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-2 bg-purple-50 rounded-t-lg">
+                  <h3 className="font-bold">Today's Verse</h3>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-4 bg-purple-50 rounded-b-lg">
+                  <p className="text-lg mb-2">{dailyVerse.text}</p>
+                  <p className="text-sm text-gray-600">- {dailyVerse.reference}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      onClick={() => toggleFavorite(dailyVerse)}
+                      variant="ghost"
+                    >
+                      <Star className={`w-5 h-5 ${favorites.some(v => v.reference === dailyVerse.reference) ? 'text-yellow-500 fill-yellow-500' : ''}`} />
+                    </Button>
+                    <ShareButton content={dailyVerse.text} reference={dailyVerse.reference} />
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <PenLine className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add Reflection</DialogTitle>
+                        </DialogHeader>
+                        <NoteEditor
+                          onSave={addNote}
+                          verseReference={dailyVerse.reference}
+                          verseText={dailyVerse.text}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
-          <div className="space-y-4">
-            <Button 
-              onClick={() => setShowDailyChallenge(!showDailyChallenge)}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <BookMarked size={20} />
-              {showDailyChallenge ? 'Hide' : 'Show'} Daily Challenge
-            </Button>
-            {showDailyChallenge && (
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-bold mb-2">Today&apos;s Challenge:</h3>
-                <p className="text-lg">{getDailyChallenge()}</p>
+          {/* Daily Challenge Section */}
+          <Collapsible>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-2 bg-green-50 rounded-t-lg">
+                <h3 className="font-bold">Daily Challenge</h3>
+                <ChevronDown className="w-4 h-4" />
               </div>
-            )}
-          </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="p-4 bg-green-50 rounded-b-lg">
+                <p className="text-lg">{getDailyChallenge()}</p>
+                <div className="mt-2">
+                  <ShareButton content={getDailyChallenge()} />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-          <div className="space-y-4">
-            <h3 className="font-semibold text-center">How are you feeling today?</h3>
+          {/* Verse Generator Section */}
+          <div className="space-y-4 border rounded-lg p-4">
+            <h3 className="font-semibold text-center">Get Encouraging Verses</h3>
             <CategorySelector
               onSelect={(category) => {
                 setSelectedCategory(category);
@@ -322,72 +341,65 @@ const EncouragementGenerator = () => {
               selectedCategory={selectedCategory}
             />
             
-            {!selectedCategory && (
+            <div className="flex gap-2">
+              {!selectedCategory && (
+                <Button 
+                  onClick={() => fetchVerse()}
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  <Book size={20} className="mr-2" />
+                  Random Verse
+                </Button>
+              )}
               <Button 
-                onClick={() => fetchVerse()}
-                className="w-full flex items-center justify-center gap-2"
+                onClick={fetchJoke}
+                className="flex-1"
                 disabled={loading}
               >
-                <Book size={20} />
-                Get Random Verse
+                <Smile size={20} className="mr-2" />
+                Clean Joke
               </Button>
-            )}
+            </div>
 
             {verse && (
               <div className="p-4 bg-blue-50 rounded-lg">
                 {selectedCategory && (
-                  <div className="mb-2">
-                    <span className="inline-block px-2 py-1 text-sm capitalize bg-blue-100 rounded">
-                      {selectedCategory}
-                    </span>
-                  </div>
+                  <span className="inline-block px-2 py-1 text-sm capitalize bg-blue-100 rounded mb-2">
+                    {selectedCategory}
+                  </span>
                 )}
                 <p className="text-lg mb-2">{verse.text}</p>
                 <p className="text-sm text-gray-600">- {verse.reference}</p>
-                <Button
-                  onClick={() => toggleFavorite(verse)}
-                  variant="ghost"
-                  className="mt-2"
-                >
-                  <Star className={`w-5 h-5 ${favorites.some(v => v.reference === verse.reference) ? 'text-yellow-500 fill-yellow-500' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button
+                    onClick={() => toggleFavorite(verse)}
+                    variant="ghost"
+                  >
+                    <Star className={`w-5 h-5 ${favorites.some(v => v.reference === verse.reference) ? 'text-yellow-500 fill-yellow-500' : ''}`} />
+                  </Button>
+                  <ShareButton content={verse.text} reference={verse.reference} />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <PenLine className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Reflection</DialogTitle>
+                      </DialogHeader>
+                      <NoteEditor
+                        onSave={addNote}
+                        verseReference={verse.reference}
+                        verseText={verse.text}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="space-y-4">
-            <Button 
-              onClick={fetchVerse}
-              className="w-full flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              <Book size={20} />
-              Get Another Verse
-            </Button>
-            {verse && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-lg mb-2">{verse.text}</p>
-                <p className="text-sm text-gray-600">- {verse.reference}</p>
-                <Button
-                  onClick={() => toggleFavorite(verse)}
-                  variant="ghost"
-                  className="mt-2"
-                >
-                  <Star className={`w-5 h-5 ${favorites.some(v => v.reference === verse.reference) ? 'text-yellow-500 fill-yellow-500' : ''}`} />
-                </Button>
-              </div>
-            )}
-          </div>
-          
-          <div className="space-y-4">
-            <Button 
-              onClick={fetchJoke}
-              className="w-full flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              <Smile size={20} />
-              Get Clean Joke
-            </Button>
             {joke && (
               <div className="p-4 bg-yellow-50 rounded-lg">
                 <p className="text-lg">{joke}</p>
@@ -395,18 +407,78 @@ const EncouragementGenerator = () => {
             )}
           </div>
 
-          {favorites.length > 0 && (
-            <div className="mt-6">
-              <h3 className="font-bold mb-2">Favorite Verses:</h3>
-              <div className="space-y-2">
-                {favorites.map((fav, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">{fav.text}</p>
-                    <p className="text-xs text-gray-600">- {fav.reference}</p>
-                  </div>
-                ))}
-              </div>
+          {/* Expandable Sections */}
+          {showNearbyUsers && (
+            <div className="border rounded-lg p-4">
+              <NearbyUsers />
             </div>
+          )}
+
+          {showPrayerJournal && (
+            <div className="border rounded-lg p-4">
+              <PrayerJournal />
+            </div>
+          )}
+
+          {showNotes && (
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-bold">Your Reflections</h3>
+              <ScrollArea className="h-[300px] pr-4">
+                {notes.length === 0 ? (
+                  <p className="text-gray-500 text-center">No reflections yet. Start writing!</p>
+                ) : (
+                  <div className="space-y-4">
+                    {notes.map((note) => (
+                      <div key={note.id} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <span className="text-sm text-gray-500">
+                            {new Date(note.date).toLocaleDateString()}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteNote(note.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {note.verseText && (
+                          <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                            "{note.verseText}"
+                            {note.verseReference && <span> - {note.verseReference}</span>}
+                          </div>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap">{note.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* Favorites Section */}
+          {favorites.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-t-lg">
+                  <h3 className="font-bold">Favorite Verses</h3>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-4 bg-gray-50 rounded-b-lg">
+                  <div className="space-y-2">
+                    {favorites.map((fav, index) => (
+                      <div key={index} className="p-3 bg-white rounded-lg">
+                        <p className="text-sm">{fav.text}</p>
+                        <p className="text-xs text-gray-600">- {fav.reference}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </CardContent>
       </Card>
@@ -415,3 +487,4 @@ const EncouragementGenerator = () => {
 };
 
 export default EncouragementGenerator;
+
