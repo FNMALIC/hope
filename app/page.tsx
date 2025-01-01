@@ -28,6 +28,7 @@ import PrayerJournal from '@/components/PrayerJournal';
 import NoteEditor from '@/components/NoteEditor';
 import CategorySelector from '@/components/CategorySelector';
 import ShareButton from '@/components/ShareButton';
+import OnboardingTour from '@/components/OnboardingTour';
 
 const EncouragementGenerator = () => {
   const [verse, setVerse] = useState<Verse | null>(null);
@@ -97,7 +98,7 @@ const EncouragementGenerator = () => {
       } else {
         verseRef = getRandomVerse();
       }
-      
+
       const response = await fetch(`https://bible-api.com/${verseRef}`);
       const data = await response.json();
       setVerse({
@@ -221,12 +222,51 @@ const EncouragementGenerator = () => {
       description: "Reflection deleted.",
     });
   };
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('onboardingComplete');
+    }
+    return false;
+  });
+
+
+  useEffect(() => {
+    // Check and update streak
+    const today = new Date().toDateString();
+    if (lastVisit !== today) {
+      if (lastVisit === new Date(Date.now() - 86400000).toDateString()) {
+        setStreak(prev => prev + 1);
+      } else if (lastVisit !== new Date(Date.now() - 86400000).toDateString()) {
+        setStreak(1);
+      }
+      setLastVisit(today);
+      fetchDailyVerse();
+    }
+
+    setTimeout(() => {
+      setInitialLoading(false);
+    }, 3000);
+  }, []);
+
   if (initialLoading) {
     return <LaodingScreen />;
   }
 
+
+
   return (
     <div className="max-w-4xl mx-auto p-4">
+
+      {showOnboarding && (
+        <OnboardingTour
+          onComplete={() => {
+            setShowOnboarding(false);
+            localStorage.setItem('onboardingComplete', 'true');
+          }}
+        />
+      )}
+
       <Card className="mb-6">
         <CardHeader className="space-y-4">
           <CardTitle className="text-center text-2xl">Daily Light</CardTitle>
@@ -340,10 +380,10 @@ const EncouragementGenerator = () => {
               }}
               selectedCategory={selectedCategory}
             />
-            
+
             <div className="flex gap-2">
               {!selectedCategory && (
-                <Button 
+                <Button
                   onClick={() => fetchVerse()}
                   className="flex-1"
                   disabled={loading}
@@ -352,7 +392,7 @@ const EncouragementGenerator = () => {
                   Random Verse
                 </Button>
               )}
-              <Button 
+              <Button
                 onClick={fetchJoke}
                 className="flex-1"
                 disabled={loading}
